@@ -32,7 +32,7 @@ namespace Tech_Priest_Librarian
             if (!message.Author.IsBot && !message.Author.IsWebhook)
             {
                 Commands(message);
-                if (message.Application == null && message.Attachments == null && message.Channel.GetType() == typeof(SocketDMChannel))
+                if (message.Channel.GetType() == typeof(SocketDMChannel))
                 {
                     foreach (var serv in Database.serversInAdding)
                     {
@@ -49,6 +49,10 @@ namespace Tech_Priest_Librarian
         {
             switch (message.Content)
             {
+                case "/debug":
+                    Database.SaveLogs(message);
+                    break;
+
                 case "/reset":
 
                     if (message.Channel.GetType() == typeof(SocketDMChannel))
@@ -62,13 +66,14 @@ namespace Tech_Priest_Librarian
                         }
 
                     }
+                    Database.SaveLogs(message);
                     break;
 
                 case "/Update servers":
 
 
                     message.Channel.SendMessageAsync(Database.UpdateServers());
-
+  
                     break;
                 case "/Add server":
 
@@ -77,6 +82,7 @@ namespace Tech_Priest_Librarian
                     serv.WhoAdded = message.Author.ToString();
                     AddingServer(message, serv);
                     Database.serversInAdding.Add(serv);
+                    Database.SaveLogs(message);
 
                     break;
             }
@@ -84,7 +90,6 @@ namespace Tech_Priest_Librarian
         }
         private Task AddingServer(SocketMessage message, ServerData serv)
         {
-
             if (serv.Name == null)
             {
                 message.Author.SendMessageAsync("`Введите название сервера`");
@@ -113,7 +118,6 @@ namespace Tech_Priest_Librarian
             else if (serv.Genres.Count <= 0)
             {
                 string msg = "`Ввыберите номер жанра, или несколько через запятую (1,2)`";
-
                 foreach (var genre in Enum.GetValues(typeof(Genre)))
                 {
                     msg += $"\n {genre}";
@@ -123,6 +127,7 @@ namespace Tech_Priest_Librarian
                
             }
             Database.ShowServerInConsole(serv);
+            Database.SaveLogs(message);
             return Task.CompletedTask;
         }
 
