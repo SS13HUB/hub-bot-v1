@@ -80,7 +80,7 @@ namespace Tech_Priest_Librarian
                     var serv = new ServerData();
                     serv.DateAdded = message.Timestamp.ToString();
                     serv.WhoAdded = message.Author.ToString();
-                    AddingServer(message, serv);
+                    message.Author.SendMessageAsync("`Введите название сервера`");
                     Database.serversInAdding.Add(serv);
                     Database.SaveLogs(message);
 
@@ -92,7 +92,6 @@ namespace Tech_Priest_Librarian
         {
             if (serv.Name == null)
             {
-                message.Author.SendMessageAsync("`Введите название сервера`");
                 if (message.Channel.GetType() == typeof(SocketDMChannel)) serv.Name = message.Content;
             }
 
@@ -126,7 +125,6 @@ namespace Tech_Priest_Librarian
                 //serv.Genres = message.Content
                
             }
-            Database.ShowServerInConsole(serv);
             Database.SaveLogs(message);
             return Task.CompletedTask;
         }

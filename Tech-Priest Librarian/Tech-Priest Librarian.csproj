@@ -7,14 +7,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="2.4.0" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="2.4.0" />
+    <Compile Remove="Logs\**" />
+    <Compile Remove="Servers on voting\**" />
+    <Compile Remove="Servers\**" />
+    <EmbeddedResource Remove="Logs\**" />
+    <EmbeddedResource Remove="Servers on voting\**" />
+    <EmbeddedResource Remove="Servers\**" />
+    <None Remove="Logs\**" />
+    <None Remove="Servers on voting\**" />
+    <None Remove="Servers\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Logs\" />
-    <Folder Include="Servers on voting\" />
-    <Folder Include="Servers\" />
+    <PackageReference Include="Discord.Net" Version="2.4.0" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="2.4.0" />
   </ItemGroup>
 
 </Project>
