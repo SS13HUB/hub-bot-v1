@@ -1,9 +1,9 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Tech_Priest_Librarian
 {
@@ -19,52 +19,110 @@ namespace Tech_Priest_Librarian
         private async Task MainAsync()
         {
             client = new DiscordSocketClient();
-            client.MessageReceived += CommandHandler; 
+            client.MessageReceived += MessageHandler;
             client.Log += Log;
-            Config config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(Directory.GetCurrentDirectory().ToString() + "/cfg.json")) ;
+            Config config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(Directory.GetCurrentDirectory().ToString() + "/cfg.json"));
             await client.LoginAsync(TokenType.Bot, config.Token);
             await client.StartAsync();
             Console.ReadLine();
         }
-        //public string DataFromPath(string path)
-        //{
-        //    try
-        //    {
-        //        string rawJson;
-        //        using (var reader = new StreamReader(path))
-        //        {
-        //            rawJson = reader.ReadToEnd();
-        //        }
 
-        //        return JsonConvert.DeserializeObject<string>(rawJson);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex.ToString());
-        //        return default(string);
-        //    }
-        //}
-
-        private Task CommandHandler(SocketMessage message)
+        private Task MessageHandler(SocketMessage message)
         {
             if (!message.Author.IsBot && !message.Author.IsWebhook)
             {
-                switch (message.Content)
+                Commands(message);
+                if (message.Application == null && message.Attachments == null && message.Channel.GetType() == typeof(SocketDMChannel))
                 {
-                    case "/Update servers":
-                        message.Channel.SendMessageAsync(Database.UpdateServers());
-                            break;
-                    case "/Add server":
-                        if (message.Author.PublicFlags.ToString().Contains("Librarian")) 
+                    foreach (var serv in Database.serversInAdding)
+                    {
+                        if (serv.WhoAdded == message.Author.ToString())
                         {
-                            var serv = new ServerData();
-                            message.Channel.SendMessageAsync("Введите ссылку на сервер");
+                            AddingServer(message, serv);
                         }
-                        
-                        break;
+                    }
                 }
             }
-            
+            return Task.CompletedTask;
+        }
+        private Task Commands(SocketMessage message)
+        {
+            switch (message.Content)
+            {
+                case "/reset":
+
+                    if (message.Channel.GetType() == typeof(SocketDMChannel))
+                    {
+                        foreach (var server in Database.serversInAdding)
+                        {
+                            if (server.WhoAdded == message.Author.ToString())
+                            {
+                                Database.serversInAdding.Remove(server);
+                            }
+                        }
+
+                    }
+                    break;
+
+                case "/Update servers":
+
+
+                    message.Channel.SendMessageAsync(Database.UpdateServers());
+
+                    break;
+                case "/Add server":
+
+                    var serv = new ServerData();
+                    serv.DateAdded = message.Timestamp.ToString();
+                    serv.WhoAdded = message.Author.ToString();
+                    AddingServer(message, serv);
+                    Database.serversInAdding.Add(serv);
+
+                    break;
+            }
+            return Task.CompletedTask;
+        }
+        private Task AddingServer(SocketMessage message, ServerData serv)
+        {
+
+            if (serv.Name == null)
+            {
+                message.Author.SendMessageAsync("`Введите название сервера`");
+                if (message.Channel.GetType() == typeof(SocketDMChannel)) serv.Name = message.Content;
+            }
+
+            else if (serv.Description == null)
+            {
+                message.Author.SendMessageAsync("`Напишите описание к серверу`");
+                if (message.Channel.GetType() == typeof(SocketDMChannel)) serv.Description = message.Content;
+            }
+
+            else if (serv.Link == null)
+            {
+                message.Author.SendMessageAsync("`Введите ссылку на сервер (ссылка должна быть не созданная вами, а постоянная)`");
+                if (message.Content.Contains("discord.gg/") || message.Content.Contains("discordapp.com/invite/"))
+                {
+                    if (message.Channel.GetType() == typeof(SocketDMChannel)) serv.Link = message.Content;
+                }
+                else
+                {
+                    if (message.Channel.GetType() == typeof(SocketDMChannel)) message.Author.SendMessageAsync("`Введите корректную ссылку. /reset чтобы начать сначала`");
+                }
+            }
+
+            else if (serv.Genres.Count <= 0)
+            {
+                string msg = "`Ввыберите номер жанра, или несколько через запятую (1,2)`";
+
+                foreach (var genre in Enum.GetValues(typeof(Genre)))
+                {
+                    msg += $"\n {genre}";
+                }
+                message.Author.SendMessageAsync(msg);
+                //serv.Genres = message.Content
+               
+            }
+            Database.ShowServerInConsole(serv);
             return Task.CompletedTask;
         }
 
